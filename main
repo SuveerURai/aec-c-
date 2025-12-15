@@ -1,0 +1,151 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+const int MAX_EXPENSES = 100;
+
+struct Expense {
+    string date, category;
+    double amount;
+    bool active;
+};
+
+Expense expenses[MAX_EXPENSES];
+int expenseCount = 0;
+double monthlyBudget = 0;
+
+void loadData() {
+    ifstream file("expenses.txt");
+    if (!file) return;
+    
+    expenseCount = 0;
+    Expense e;
+    while (expenseCount < MAX_EXPENSES && file >> e.date >> e.category >> e.amount) {
+        e.active = true;
+        expenses[expenseCount] = e;
+        expenseCount++;
+    }
+    file.close();
+}
+
+void saveData() {
+    ofstream file("expenses.txt");
+    for(int i = 0; i < expenseCount; i++) {
+        if(expenses[i].active) {
+            file << expenses[i].date << " " << expenses[i].category << " " 
+                 << expenses[i].amount << endl;
+        }
+    }
+    file.close();
+}
+
+void setBudget() {
+    cout << "\nEnter monthly budget: Rs. ";
+    cin >> monthlyBudget;
+    cout << "Budget set to Rs. " << monthlyBudget << endl;
+}
+
+void addExpense() {
+    if(expenseCount >= MAX_EXPENSES) {
+        cout << "\nStorage full!\n";
+        return;
+    }
+    
+    Expense e;
+    cout << "\nEnter date (DD-MM): "; cin >> e.date;
+    cout << "Category (Food/Travel/Shopping/Other): "; cin >> e.category;
+    cout << "Amount (Rs.): "; cin >> e.amount;
+    
+    if(e.amount < 0) {
+        cout << "Invalid amount!\n";
+        return;
+    }
+    
+    e.active = true;
+    expenses[expenseCount] = e;
+    expenseCount++;
+    
+    double totalSpent = 0;
+    for(int i = 0; i < expenseCount; i++) {
+        if(expenses[i].active) totalSpent += expenses[i].amount;
+    }
+    
+    cout << "Expense added!\n";
+    if(totalSpent > monthlyBudget) {
+        cout << "🚨 BUDGET EXCEEDED! Total spent: Rs. " << totalSpent << endl;
+    }
+}
+
+void showCategoryReport() {
+    double food = 0, travel = 0, shopping = 0, other = 0;
+    double total = 0;
+    
+    for(int i = 0; i < expenseCount; i++) {
+        if(expenses[i].active) {
+            total += expenses[i].amount;
+            if(expenses[i].category == "Food") food = expenses[i].amount;
+            else if(expenses[i].category == "Travel") travel = expenses[i].amount;
+            else if(expenses[i].category == "Shopping") shopping = expenses[i].amount;
+            else other = expenses[i].amount;
+        }
+    }
+    
+    cout << "\n=== MONTHLY EXPENSE REPORT ===\n";
+    cout << "Food      : Rs. " << food << endl;
+    cout << "Travel    : Rs. " << travel << endl;
+    cout << "Shopping  : Rs. " << shopping << endl;
+    cout << "Other     : Rs. " << other << endl;
+    cout << "Total     : Rs. " << total << endl;
+    
+    if(monthlyBudget > 0) {
+        double savings = monthlyBudget - total;
+        cout << "Budget    : Rs. " << monthlyBudget << endl;
+        cout << "Savings   : Rs. " << savings << endl;
+        if(savings < 0) cout << "🚨 Overspent by Rs. " << (-savings) << endl;
+        else cout << "✅ Good job! You're saving.\n";
+    }
+}
+
+void deleteExpense() {
+    string date;
+    cout << "\nEnter date to delete (DD-MM): "; cin >> date;
+    
+    for(int i = 0; i < expenseCount; i++) {
+        if(expenses[i].active && expenses[i].date == date) {
+            expenses[i].active = false;
+            cout << "Expense deleted!\n";
+            return;
+        }
+    }
+    cout << "Expense not found!\n";
+}
+
+int main() {
+    cout << "=== Personal Expense Tracker ===\n";
+    loadData();
+    
+    int choice;
+    do {
+        cout << "\n=============================\n";
+        cout << "1. Set Monthly Budget\n";
+        cout << "2. Add Expense\n";
+        cout << "3. Show Expense Report\n";
+        cout << "4. Delete Expense\n";
+        cout << "5. Exit\n";
+        cout << "Choice: ";
+        cin >> choice;
+        
+        switch(choice) {
+            case 1: setBudget(); break;
+            case 2: addExpense(); break;
+            case 3: showCategoryReport(); break;
+            case 4: deleteExpense(); break;
+            case 5: cout << "Data saved! Thank you.\n"; break;
+            default: cout << "Invalid choice!\n";
+        }
+    } while(choice != 5);
+    
+    saveData();
+    return 0;
+}
